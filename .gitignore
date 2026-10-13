@@ -1,0 +1,8 @@
+.nextflow*
+*~
+**/*~
+results/
+work/
+**/__pycache__
+**/.venv
+**/uv.lock

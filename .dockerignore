@@ -1,0 +1,9 @@
+**/.gitignore
+**/.git
+**/*~
+*~
+.nextflow*
+.git
+results
+work
+**/__pycache__
