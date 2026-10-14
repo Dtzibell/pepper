@@ -2,7 +2,39 @@ import polars as pl
 import pyopenms as oms
 
 
-def find_best_decoy_and_target_alignments(
+def match_precursors_to_database(
+    precursors: pl.DataFrame,
+    peptides: pl.DataFrame,
+    column_name_prefix: str,
+    relative_tolerance: float = 0.000005,
+) -> pl.DataFrame:
+    """Matches each precursor to peptides in a database whose weight is close to the precursor's weight.
+
+    Return a DataFrame that is a horizontally expanded precursors DataFrame, containing the matched peptides' sequence.
+
+    :param precursors: a polars.DataFrame containing the precursors' weight and charge.
+    :param peptides: a polars.DataFrame containing the peptides' weight and sequence.
+    :param match_prefix: a string that will be prefixed to the new column of the DataFrame.
+    :param relative_tolerance: the relative tolerance for matching peptides to precursors.
+    """
+    peptides = peptides.sort(by="weight")
+    weights = peptides["weight"]
+    sequences = peptides["sequence"]
+
+    low = weights.search_sorted(precursors["weight"] * (1 - relative_tolerance), "left")
+    high = weights.search_sorted(
+        precursors["weight"] * (1 + relative_tolerance), "right"
+    )
+
+    return precursors.with_columns(
+        pl.Series(
+            f"{column_name_prefix}_matches",
+            [sequences[lo:hi] for (lo, hi) in zip(low, high)],
+        )
+    )
+
+
+def find_best_decoy_and_target_matches(
     precursors_matched_to_candidates: pl.DataFrame,
     theoretical_spectrum_generator: oms.TheoreticalSpectrumGenerator,
     spectrum_alignment: oms.SpectrumAlignment,

@@ -53,9 +53,7 @@ def generate_targets_and_decoys(
     target_weights = [target.getMonoWeight() for target in targets]
     decoy_weights = [decoy.getMonoWeight() for decoy in decoys]
 
-    # AASequence is converted to a python string, because AASequence
-    # cannot be written to parquet, and the later pipeline writes the
-    # DataFrames to parquet
+    # strings are enough information here. Dont really need oms.AASequence
     decoys = [seq.toString() for seq in decoys]
     targets = [seq.toString() for seq in targets]
 

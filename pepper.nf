@@ -1,7 +1,4 @@
 #!/usr/bin/env nextflow
-params {
-    dataset_url: String = "https://github.com/KohlbacherLab/CPMAssets/releases/download/2026/u6_data.zip"
-}
 
 process downloadDataset {
     container 'my:pepper'
@@ -43,28 +40,24 @@ process matchPrecursorsToDatabase {
     path mzmlPath
 
     output:
-    path "preprocessing/peptide_alignment_lengths.png", emit: alignment_length_histogram
-    path "preprocessing/pseudo-ROC.png", emit: ROC
-    path "preprocessing/data.zst", emit: final_output
+    path "peptide_alignment_lengths.png", emit: alignment_length_histogram
+    path "pseudo-ROC.png", emit: ROC
+    path "data.zst", emit: final_output
 
     script:
     """
-    mkdir -p preprocessing
-    uv run --no-sync --project /opt/data-analysis match-peptides --fasta ${fastaPath} --mzml ${mzmlPath} --outputdir preprocessing
+    uv run --no-sync --project /opt/data-analysis match-peptides --fasta ${fastaPath} --mzml ${mzmlPath} --outputdir .
     """
 }
 
 
 workflow {
     main:
-    downloadDataset(params.dataset_url)
-
-    unzipDataset(downloadDataset.out)
-
-    matchPrecursorsToDatabase(unzipDataset.out.fasta, unzipDataset.out.mzml)
-
+    dataset = downloadDataset(params.dataset_url)
+    def (mzml, fasta) = unzipDataset(dataset)
+    matchPrecursorsToDatabase(fasta, mzml)
     publish:
-    zipped_dataset = downloadDataset.out
+    zipped_dataset = dataset
     mzml_file = unzipDataset.out.mzml
     fasta_file = unzipDataset.out.fasta
     roc = matchPrecursorsToDatabase.out.ROC

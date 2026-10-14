@@ -21,12 +21,14 @@ def get_precursors(exp: oms.MSExperiment) -> pl.DataFrame:
 
     :returns: a polars.DataFrame with columns ["precursor_mass", "precursor_charge"]
     """
-    MS2 = [spectrum for spectrum in exp.getSpectra() if spectrum.getMSLevel() == 2]
-    precursor_mass = []
-    precursor_charge = []
-    for spectrum in MS2:
-        precursor = spectrum.getPrecursors()[0]
-        precursor_mass.append(precursor.getUnchargedMass())
-        precursor_charge.append(precursor.getCharge())
-
-    return pl.DataFrame({"weight": precursor_mass, "charge": precursor_charge})
+    precursors = [
+        spectrum.getPrecursors()[0]
+        for spectrum in exp.getSpectra()
+        if spectrum.getMSLevel() == 2
+    ]
+    return pl.DataFrame(
+        {
+            "weight": [p.getUnchargedMass() for p in precursors],
+            "charge": [p.getCharge() for p in precursors],
+        }
+    )
